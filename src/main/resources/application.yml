@@ -362,6 +362,10 @@ aqcu:
   login:
     url: ${aqcuLoginUrl:https://localhost:443/}
 
+gateway:
+  login:
+    page: ${gatewayLoginPage:oauth2/authorization/waterAuth}
+
 hystrix:
   shareSecurityContext: true
   command:
@@ -377,11 +381,6 @@ security:
   basic:
     enabled: false
   oauth2:
-    client:
-      clientId: ${oauthClientId}
-      clientSecret: ${oauthClientSecret}
-      accessTokenUri: ${oauthClientAccessTokenUri}
-      userAuthorizationUri: ${oauthClientAuthorizationUri}
     resource:
       id: ${oauthResourceId}
       jwt:
@@ -398,3 +397,22 @@ spring:
     name: aqcu-gateway
   jmx:
     default-domain: aqcu-gateway
+  security:
+    oauth2:
+      client:
+        registration:
+          waterAuth:
+            client-id: ${oauthClientId}
+            client-secret: ${oauthClientSecret}
+            client-name: ${oauthClientName}
+            redirect-uri-template: ${gwOauthRedirectUriTemplate}
+            scope: ${oauthScope}
+            authorization-grant-type: authorization_code
+            provider: waterAuth
+            client-authentication-method: basic
+        provider:
+          waterAuth:
+            token-uri: ${oauthClientAccessTokenUri}
+            authorization-uri: ${oauthClientAuthorizationUri}
+            jwk-set-uri: ${oauthResourceTokenKeyUri}
+            user-name-attribute: user_name

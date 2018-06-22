@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.OAuth2ClientContext;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResourceDetails;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationManager;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationProcessingFilter;
@@ -20,6 +21,8 @@ import org.springframework.security.oauth2.provider.token.ResourceServerTokenSer
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 
 import feign.RequestInterceptor;
+import gov.usgs.aqcu.CustomOAuth2UserService;
+import gov.usgs.aqcu.WaterAuthSuccessHandler;
 
 @Configuration
 @EnableOAuth2Sso
@@ -31,6 +34,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Autowired
 	private ResourceServerTokenServices tokenServices;
+
+	@Autowired
+	private CustomOAuth2UserService customOAuth2UserService;
+	@Autowired
+	private ClientRegistrationRepository clientRegistrationRepository;
+	@Autowired
+	private WaterAuthSuccessHandler waterAuthSuccessHandler;
+	@Value("${gateway.login.page}")
+	private String loginPage;
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
@@ -46,9 +58,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.logout().permitAll()
 			.and()
 				.csrf().disable()
-			.cors().and()
-			.addFilterAfter(oAuth2AuthenticationProcessingFilter(), AbstractPreAuthenticatedProcessingFilter.class)
-			.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+				.cors()
+			.and()
+				.addFilterAfter(oAuth2AuthenticationProcessingFilter(), AbstractPreAuthenticatedProcessingFilter.class)
+				.oauth2Login()
+					.loginPage("/" + loginPage)
+					.clientRegistrationRepository(clientRegistrationRepository)
+					.successHandler(waterAuthSuccessHandler)
+					.userInfoEndpoint()
+					.userService(customOAuth2UserService)
 		;
 	}
 
